@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NotifyMe - Görev Takip</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial; margin: 30px; }
+        .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        .done { background-color: #d2ffd2; }
+    </style>
+</head>
+<body>
+    <h1>📋 NotifyMe</h1>
+
+    <form method="POST" action="/add">
+        <input name="title" placeholder="Görev başlığı" required><br><br>
+        <input name="description" placeholder="Açıklama"><br><br>
+        <input name="due_date" type="date" required><br><br>
+        <button type="submit">Görev Ekle</button>
+    </form>
+
+    <hr>
+
+    {% if tasks %}
+        {% for task in tasks %}
+            <div class="task {% if task.completed %}done{% endif %}">
+                <strong>{{ loop.index }}. {{ task.title }}</strong> - {{ task.due_date }}<br>
+                <em>{{ task.description }}</em><br>
+                {% if not task.completed %}
+                    <a href="/complete/{{ loop.index0 }}">✅ Tamamla</a> |
+                {% endif %}
+                <a href="/delete/{{ loop.index0 }}">🗑️ Sil</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Henüz görev yok.</p>
+    {% endif %}
+</body>
+</html>
