@@ -6,11 +6,19 @@ app = Flask(__name__)
 
 TASK_FILE = "tasks.json"
 
+from datetime import datetime  # Üstte import edilmeli
+
 def load_tasks():
     if not os.path.exists(TASK_FILE):
         return []
+
     with open(TASK_FILE, "r") as f:
-        return json.load(f)
+        tasks = json.load(f)
+
+    # Görevleri tarihe göre sırala
+    tasks.sort(key=lambda x: datetime.strptime(x["due_date"], "%Y-%m-%d"))
+    return tasks
+
 
 def save_tasks(tasks):
     with open(TASK_FILE, "w") as f:
@@ -19,7 +27,13 @@ def save_tasks(tasks):
 @app.route("/")
 def index():
     tasks = load_tasks()
+    search_query = request.args.get("search", "").lower()
+
+    if search_query:
+        tasks = [task for task in tasks if search_query in task["title"].lower()]
+
     return render_template("index.html", tasks=tasks)
+
 
 @app.route("/add", methods=["POST"])
 def add():

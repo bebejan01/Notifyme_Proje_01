@@ -1,8 +1,8 @@
 [
     {
-        "title": "\u00d6rnek g\u00f6rev",
-        "description": "HTML ile eklendi",
-        "due_date": "2025-07-15",
+        "title": "yaz okulu kay\u0131t",
+        "description": "yaz okulu i\u00e7in okul sayfas\u0131ndan kay\u0131t yap\u0131p har\u00e7 \u00f6de",
+        "due_date": "2025-07-23",
         "completed": false
     }
 ]

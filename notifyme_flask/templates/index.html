@@ -7,10 +7,55 @@
         body { font-family: Arial; margin: 30px; }
         .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
         .done { background-color: #d2ffd2; }
+
+    body { font-family: Arial; margin: 30px; }
+
+    .task {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+
+    .done {
+        background-color: #d2ffd2;
+    }
+
+    input, button {
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 4px;
+        border: 1px solid #aaa;
+    }
+
+    button, a.button-link {
+        background-color: #007BFF;
+        color: white;
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+    }
+
+    a.button-link:hover {
+        background-color: #0056b3;
+    }
+
+    .button-group {
+        margin-top: 5px;
+    }
+
     </style>
 </head>
 <body>
     <h1>📋 NotifyMe</h1>
+
+    <form method="get" action="/">
+    <input type="text" name="search" placeholder="Görev ara..." value="{{ request.args.get('search', '') }}">
+    <button type="submit">Ara</button>
+</form>
+
 
     <form method="POST" action="/add">
         <input name="title" placeholder="Görev başlığı" required><br><br>
@@ -24,12 +69,22 @@
     {% if tasks %}
         {% for task in tasks %}
             <div class="task {% if task.completed %}done{% endif %}">
-                <strong>{{ loop.index }}. {{ task.title }}</strong> - {{ task.due_date }}<br>
+                <strong>{{ loop.index }}.
+{% if task.completed %}
+    <s>{{ task.title }}</s>
+{% else %}
+    {{ task.title }}
+{% endif %}
+</strong> - {{ task.due_date }}<br>
+
                 <em>{{ task.description }}</em><br>
+                <div class="button-group">
                 {% if not task.completed %}
-                    <a href="/complete/{{ loop.index0 }}">✅ Tamamla</a> |
-                {% endif %}
-                <a href="/delete/{{ loop.index0 }}">🗑️ Sil</a>
+                <a href="/complete/{{ loop.index0 }}" class="button-link">✅ Tamamla</a>
+                    {% endif %}
+                <a href="/delete/{{ loop.index0 }}" class="button-link">🗑️ Sil</a>
+                </div>
+
             </div>
         {% endfor %}
     {% else %}
