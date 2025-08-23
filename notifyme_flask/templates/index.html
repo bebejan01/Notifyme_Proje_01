@@ -51,15 +51,46 @@
 <body>
     <h1>📋 NotifyMe</h1>
 
-    <form method="get" action="/">
+<form method="get" action="/" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
     <input type="text" name="search" placeholder="Görev ara..." value="{{ request.args.get('search', '') }}">
+
+
+
     <button type="submit">Ara</button>
 </form>
 
 
+<form method="get" action="/">
+    <select name="category_filter">
+        <option value="">Tüm Kategoriler</option>
+        <option value="Genel">Genel</option>
+        <option value="Ders">Ders</option>
+        <option value="Sağlık">Sağlık</option>
+        <option value="İş">İş</option>
+        <option value="Kişisel">Kişisel</option>
+    </select>
+    <select name="status_filter">
+        <option value="">Tüm Durumlar</option>
+        <option value="pending">Tamamlanmadı</option>
+        <option value="completed">Tamamlandı</option>
+    </select>
+    <button type="submit">Filtrele</button>
+</form>
+
     <form method="POST" action="/add">
         <input name="title" placeholder="Görev başlığı" required><br><br>
         <input name="description" placeholder="Açıklama"><br><br>
+
+    <select name="category" required>
+        <option value="Genel">Genel</option>
+        <option value="Ders">Ders</option>
+        <option value="İş">İş</option>
+        <option value="Kişisel">Kişisel</option>
+        <option value="Sağlık">Sağlık</option>
+    </select><br><br>
+
+
+
         <input name="due_date" type="date" required><br><br>
         <button type="submit">Görev Ekle</button>
     </form>
@@ -70,12 +101,14 @@
         {% for task in tasks %}
             <div class="task {% if task.completed %}done{% endif %}">
                 <strong>{{ loop.index }}.
-{% if task.completed %}
-    <s>{{ task.title }}</s>
-{% else %}
-    {{ task.title }}
-{% endif %}
-</strong> - {{ task.due_date }}<br>
+                {% if task.completed %}
+                    <s>{{ task.title }}</s>
+                {% else %}
+                    {{ task.title }}
+                {% endif %}
+                </strong> - {{ task.due_date }}<br>
+                
+                Kategori: <em>{{ task.category }}</em><br>
 
                 <em>{{ task.description }}</em><br>
                 <div class="button-group">

@@ -27,12 +27,35 @@ def save_tasks(tasks):
 @app.route("/")
 def index():
     tasks = load_tasks()
-    search_query = request.args.get("search", "").lower()
 
+    search_query = request.args.get('search', '').lower()
+    category_filter = request.args.get('category_filter', '')
+    status_filter = request.args.get('status_filter', '')
+
+    # 1. Arama filtresi
     if search_query:
-        tasks = [task for task in tasks if search_query in task["title"].lower()]
+        tasks = [t for t in tasks if search_query in t['title'].lower() or search_query in t['description'].lower()]
+
+    # 2. Kategori filtresi
+    if category_filter:
+        tasks = [t for t in tasks if t.get('category') == category_filter]
+
+    # 3. Durum filtresi
+
+
+
+    def parse_date(task):
+        try:
+            return datetime.strptime(task['due_date'], "%Y-%m-%d")
+        except ValueError:
+            return datetime.max
+
+    tasks.sort(key=parse_date)
+    
 
     return render_template("index.html", tasks=tasks)
+
+
 
 
 @app.route("/add", methods=["POST"])
@@ -40,12 +63,16 @@ def add():
     title = request.form["title"]
     description = request.form["description"]
     due_date = request.form["due_date"]
+    category = request.form["category"]
+
     task = {
         "title": title,
         "description": description,
         "due_date": due_date,
+        "category": category,  
         "completed": False
     }
+
     tasks = load_tasks()
     tasks.append(task)
     save_tasks(tasks)
