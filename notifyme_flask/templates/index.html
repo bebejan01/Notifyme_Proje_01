@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <title>NotifyMe - Görev Takip</title>
     <meta charset="utf-8">
     <style>
@@ -49,14 +50,21 @@
     </style>
 </head>
 <body>
-    <h1>📋 NotifyMe</h1>
+    
 
-<form method="get" action="/" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
-    <input type="text" name="search" placeholder="Görev ara..." value="{{ request.args.get('search', '') }}">
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div id="flash-message" style="background-color: #d4edda; padding: 10px; border-radius: 5px; border: 1px solid #c3e6cb; margin-bottom: 20px;">
+      {% for message in messages %}
+        <strong>{{ message }}</strong> ✅
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
-
-
-    <button type="submit">Ara</button>
+<form method="get" action="/" class="d-flex gap-2 align-items-center mb-4">
+  <input type="text" name="search" class="form-control" placeholder="Görev ara..." value="{{ request.args.get('search', '') }}">
+  <button type="submit" class="btn btn-primary">Ara</button>
 </form>
 
 
@@ -77,51 +85,83 @@
     <button type="submit">Filtrele</button>
 </form>
 
-    <form method="POST" action="/add">
-        <input name="title" placeholder="Görev başlığı" required><br><br>
-        <input name="description" placeholder="Açıklama"><br><br>
+<form method="POST" action="/add" class="mb-4 p-3 border rounded bg-light">
+  <div class="mb-3">
+    <label for="title" class="form-label">Başlık</label>
+    <input type="text" name="title" id="title" class="form-control" placeholder="Görev başlığı" required>
+  </div>
 
-    <select name="category" required>
-        <option value="Genel">Genel</option>
-        <option value="Ders">Ders</option>
-        <option value="İş">İş</option>
-        <option value="Kişisel">Kişisel</option>
-        <option value="Sağlık">Sağlık</option>
-    </select><br><br>
+  <div class="mb-3">
+    <label for="description" class="form-label">Açıklama</label>
+    <input type="text" name="description" id="description" class="form-control" placeholder="Açıklama">
+  </div>
+
+  <div class="mb-3">
+    <label for="category" class="form-label">Kategori</label>
+    <select name="category" id="category" class="form-select" required>
+      <option value="Genel">Genel</option>
+      <option value="Ders">Ders</option>
+      <option value="İş">İş</option>
+      <option value="Kişisel">Kişisel</option>
+      <option value="Sağlık">Sağlık</option>
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label for="due_date" class="form-label">Teslim Tarihi</label>
+    <input type="date" name="due_date" id="due_date" class="form-control" required>
+  </div>
+
+  <button type="submit" class="btn btn-success">Görev Ekle</button>
+</form>
+<hr>
 
 
-
-        <input name="due_date" type="date" required><br><br>
-        <button type="submit">Görev Ekle</button>
-    </form>
-
-    <hr>
 
     {% if tasks %}
-        {% for task in tasks %}
-            <div class="task {% if task.completed %}done{% endif %}">
-                <strong>{{ loop.index }}.
-                {% if task.completed %}
-                    <s>{{ task.title }}</s>
-                {% else %}
-                    {{ task.title }}
-                {% endif %}
-                </strong> - {{ task.due_date }}<br>
-                
-                Kategori: <em>{{ task.category }}</em><br>
-
-                <em>{{ task.description }}</em><br>
-                <div class="button-group">
-                {% if not task.completed %}
-                <a href="/complete/{{ loop.index0 }}" class="button-link">✅ Tamamla</a>
-                    {% endif %}
-                <a href="/delete/{{ loop.index0 }}" class="button-link">🗑️ Sil</a>
-                </div>
-
+            <div class="container">
+            <div class="row">
+                {% for task in tasks %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card {% if task.completed %}bg-success text-white{% endif %}">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {% if task.completed %}
+                                        <s>{{ loop.index }}. {{ task.title }}</s>
+                                    {% else %}
+                                        {{ loop.index }}. {{ task.title }}
+                                    {% endif %}
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ task.due_date }}</h6>
+                                <p class="card-text">{{ task.description }}</p>
+                                <p><em>Kategori:</em> {{ task.category }}</p>
+                                <div class="btn-group" role="group">
+                                    {% if not task.completed %}
+                                        <a href="/complete/{{ loop.index0 }}" class="btn btn-sm btn-success">✔ Tamamla</a>
+                                    {% endif %}
+                                    <a href="/edit/{{ loop.index0 }}" class="btn btn-sm btn-primary">✏ Düzenle</a>
+                                    <a href="/delete/{{ loop.index0 }}" class="btn btn-sm btn-danger">🗑 Sil</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
-        {% endfor %}
+        </div>
+
     {% else %}
         <p>Henüz görev yok.</p>
     {% endif %}
+
+<script>
+    // Flash mesajını 3 saniyede gizle
+    setTimeout(function() {
+        const flash = document.getElementById('flash-message');
+        if (flash) {
+            flash.style.display = 'none';
+        }
+    }, 3000);
+</script>
+
 </body>
 </html>

@@ -1,0 +1,27 @@
+<form method="POST">
+  <label>Başlık:</label><br>
+  <input type="text" name="title" value="{{ task.title }}" required><br><br>
+
+  <label>Açıklama:</label><br>
+  <input type="text" name="description" value="{{ task.description }}"><br><br>
+
+  <label>Kategori:</label><br>
+  <select name="category" required>
+    <option value="Genel" {% if task.category == "Genel" %}selected{% endif %}>Genel</option>
+    <option value="Ders" {% if task.category == "Ders" %}selected{% endif %}>Ders</option>
+    <option value="İş" {% if task.category == "İş" %}selected{% endif %}>İş</option>
+    <option value="Kişisel" {% if task.category == "Kişisel" %}selected{% endif %}>Kişisel</option>
+    <option value="Sağlık" {% if task.category == "Sağlık" %}selected{% endif %}>Sağlık</option>
+  </select><br><br>
+
+  <label>Teslim Tarihi:</label><br>
+  <input type="date" name="due_date" value="{{ task.due_date }}" required><br><br>
+
+  <label>
+    <input type="checkbox" name="completed" {% if task.completed %}checked{% endif %}>
+    Tamamlandı
+  </label><br><br>
+
+  <button type="submit">Kaydet</button>
+  <a href="{{ url_for('index') }}">İptal</a>
+</form>
