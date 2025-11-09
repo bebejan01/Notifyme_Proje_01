@@ -47,6 +47,14 @@
         margin-top: 5px;
     }
 
+    /* Kartı yumuşakça kaydırıp soluklaştıran animasyon */
+    .card.fade-slide-out {
+    transition: transform .32s ease, opacity .32s ease, box-shadow .32s ease;
+    transform: translateY(-6px) scale(.98);
+    opacity: 0;
+    box-shadow: none;
+}
+
     </style>
 </head>
 <body>
@@ -62,10 +70,33 @@
   {% endif %}
 {% endwith %}
 
-<form method="get" action="/" class="d-flex gap-2 align-items-center mb-4">
-  <input type="text" name="search" class="form-control" placeholder="Görev ara..." value="{{ request.args.get('search', '') }}">
+<form id="searchForm" method="get" action="/" class="d-flex gap-2 align-items-center mb-4">
+  <input id="searchInput" type="text" name="search" class="form-control"
+         placeholder="Görev ara..." value="{{ request.args.get('search', '') }}">
+  <div class="form-check">
+    <input class="form-check-input" type="checkbox" name="hide_completed" value="true" id="hideCompleted"
+           {% if hide_completed %}checked{% endif %}>
+    <label class="form-check-label" for="hideCompleted">
+      {{ 'Tamamlanmışları göster' if hide_completed else 'Tamamlanmışları gizle' }}
+    </label>
+  </div>
   <button type="submit" class="btn btn-primary">Ara</button>
 </form>
+
+<a id="toggleHideBtn" class="btn btn-outline-secondary mb-3"
+   href="{{ url_for('index',
+                    search=request.args.get('search',''),
+                    category_filter=request.args.get('category_filter',''),
+                    status_filter=request.args.get('status_filter',''),
+                    hide_completed=('false' if hide_completed else 'true'),
+                    page=request.args.get('page', 1)) }}">
+  {{ 'Tamamlananları Göster' if hide_completed else 'Tamamlananları Gizle' }}
+</a>
+
+
+
+
+
 
 
 <form method="get" action="/">
@@ -136,18 +167,92 @@
                                 <p class="card-text">{{ task.description }}</p>
                                 <p><em>Kategori:</em> {{ task.category }}</p>
                                 <div class="btn-group" role="group">
-                                    {% if not task.completed %}
-                                        <a href="/complete/{{ loop.index0 }}" class="btn btn-sm btn-success">✔ Tamamla</a>
-                                    {% endif %}
-                                    <a href="/edit/{{ loop.index0 }}" class="btn btn-sm btn-primary">✏ Düzenle</a>
-                                    <a href="/delete/{{ loop.index0 }}" class="btn btn-sm btn-danger">🗑 Sil</a>
-                                </div>
+  {% if not task.completed %}
+    <a href="{{ url_for('complete',
+                        index=loop.index0,
+                        search=request.args.get('search',''),
+                        category_filter=request.args.get('category_filter',''),
+                        status_filter=request.args.get('status_filter',''),
+                        hide_completed=('true' if hide_completed else 'false'),
+                        page=request.args.get('page', 1)) }}"
+       data-anim="out"
+       class="btn btn-sm btn-success">✔ Tamamla</a>
+  {% endif %}
+
+  <a href="{{ url_for('edit_task',
+                      index=loop.index0,
+                      search=request.args.get('search',''),
+                      category_filter=request.args.get('category_filter',''),
+                      status_filter=request.args.get('status_filter',''),
+                      hide_completed=('true' if hide_completed else 'false'),
+                      page=request.args.get('page', 1)) }}"
+     class="btn btn-sm btn-primary">✏ Düzenle</a>
+
+  <a href="{{ url_for('delete',
+                      index=loop.index0,
+                      search=request.args.get('search',''),
+                      category_filter=request.args.get('category_filter',''),
+                      status_filter=request.args.get('status_filter',''),
+                      hide_completed=('true' if hide_completed else 'false'),
+                      page=request.args.get('page', 1)) }}"
+     data-anim="out"
+     class="btn btn-sm btn-danger">🗑 Sil</a>
+</div>
+
                             </div>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
+        
+        {% if total > 0 %}
+  <div class="d-flex justify-content-between align-items-center my-3">
+    <div class="text-muted small">
+      Gösterilen: {{ start_index + 1 }}–{{ end_index }} / {{ total }}
+    </div>
+
+    <nav aria-label="Sayfalama">
+      <ul class="pagination mb-0">
+        <!-- Önceki -->
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('index',
+                                                search=request.args.get('search',''),
+                                                category_filter=request.args.get('category_filter',''),
+                                                status_filter=request.args.get('status_filter',''),
+                                                hide_completed=('true' if hide_completed else 'false'),
+                                                page=(page-1)) }}">Önceki</a>
+        </li>
+
+        <!-- Sayfa Numaraları (küçük projede hepsini göstermek yeterli) -->
+        {% for p in range(1, total_pages + 1) %}
+          <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('index',
+                                                  search=request.args.get('search',''),
+                                                  category_filter=request.args.get('category_filter',''),
+                                                  status_filter=request.args.get('status_filter',''),
+                                                  hide_completed=('true' if hide_completed else 'false'),
+                                                  page=p) }}">{{ p }}</a>
+          </li>
+        {% endfor %}
+
+        <!-- Sonraki -->
+        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('index',
+                                                search=request.args.get('search',''),
+                                                category_filter=request.args.get('category_filter',''),
+                                                status_filter=request.args.get('status_filter',''),
+                                                hide_completed=('true' if hide_completed else 'false'),
+                                                page=(page+1)) }}">Sonraki</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+{% endif %}
+
+
+
+
 
     {% else %}
         <p>Henüz görev yok.</p>
@@ -162,6 +267,127 @@
         }
     }, 3000);
 </script>
+
+<script>
+  // Tamamla/Sil'e tıklandığında önce kart animasyon oynasın, sonra yönlendirilsin
+  document.addEventListener('click', function (e) {
+    const link = e.target.closest('a[data-anim="out"]');
+    if (!link) return;
+
+    const card = link.closest('.card');
+    if (!card) return;
+
+    // Çift tıklama/tekrar tıklamayı engelle
+    e.preventDefault();
+    link.classList.add('disabled');
+    link.style.pointerEvents = 'none';
+
+    // Animasyonu başlat
+    card.classList.add('fade-slide-out');
+
+    // Animasyon bitince (yaklaşık 320ms) linke git
+    setTimeout(function () {
+      window.location.href = link.href;
+    }, 330);
+  });
+</script>
+
+<script>
+(function() {
+  // Storage anahtarları
+  const K_SEARCH = 'nm_search';
+  const K_CAT    = 'nm_category';
+  const K_STATUS = 'nm_status';
+  const K_HIDE   = 'nm_hide';   // "true" | "false"
+
+  // Elemanlar
+  const searchForm   = document.getElementById('searchForm');
+  const filterForm   = document.getElementById('filterForm');
+  const searchInput  = document.getElementById('searchInput');
+  const hideCheckbox = document.getElementById('hideCompleted');
+  const categorySel  = document.getElementById('categorySelect');
+  const statusSel    = document.getElementById('statusSelect');
+  const toggleLink   = document.getElementById('toggleHideBtn');
+
+  // URL parametrelerinden mevcut değerler
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlHas = (key) => urlParams.has(key) && urlParams.get(key) !== '';
+
+  // ----- Kaydet -----
+  function savePrefs() {
+    try {
+      if (searchInput)  localStorage.setItem(K_SEARCH, searchInput.value || '');
+      if (categorySel)  localStorage.setItem(K_CAT,    categorySel.value || '');
+      if (statusSel)    localStorage.setItem(K_STATUS, statusSel.value || '');
+      if (hideCheckbox) localStorage.setItem(K_HIDE,   hideCheckbox.checked ? 'true' : 'false');
+    } catch(_) {}
+  }
+
+  // ----- Yükle (URL boşsa doldur) -----
+  function loadPrefsIfUrlEmpty() {
+    try {
+      if (searchInput && !urlHas('search')) {
+        const v = localStorage.getItem(K_SEARCH);
+        if (v !== null && !searchInput.value) searchInput.value = v;
+      }
+      if (categorySel && !urlHas('category_filter')) {
+        const v = localStorage.getItem(K_CAT);
+        if (v !== null && !categorySel.value) categorySel.value = v;
+      }
+      if (statusSel && !urlHas('status_filter')) {
+        const v = localStorage.getItem(K_STATUS);
+        if (v !== null && !statusSel.value) statusSel.value = v;
+      }
+      if (hideCheckbox && !urlHas('hide_completed')) {
+        const v = localStorage.getItem(K_HIDE);
+        if (v !== null) hideCheckbox.checked = (v === 'true');
+      }
+    } catch(_) {}
+  }
+
+  // ----- Toggle link href'ini güncelle -----
+  function buildUrl(toggledHide = null) {
+    const p = new URLSearchParams();
+
+    const s = searchInput ? searchInput.value : '';
+    const c = categorySel ? categorySel.value : '';
+    const st= statusSel ? statusSel.value : '';
+
+    if (s)  p.set('search', s);
+    if (c)  p.set('category_filter', c);
+    if (st) p.set('status_filter', st);
+
+    const hideVal = (toggledHide !== null)
+      ? toggledHide
+      : (hideCheckbox && hideCheckbox.checked ? 'true' : 'false');
+    p.set('hide_completed', hideVal);
+
+    const q = p.toString();
+    return '/' + (q ? ('?' + q) : '');
+  }
+
+  function refreshToggleHref() {
+    if (!toggleLink) return;
+    const nextHide = (hideCheckbox && hideCheckbox.checked) ? 'false' : 'true';
+    toggleLink.setAttribute('href', buildUrl(nextHide));
+  }
+
+  // Eventlar
+  if (searchForm) searchForm.addEventListener('submit', savePrefs);
+  if (filterForm) filterForm.addEventListener('submit', savePrefs);
+
+  [searchInput, categorySel, statusSel, hideCheckbox].forEach(el => {
+    if (!el) return;
+    el.addEventListener('input',  refreshToggleHref);
+    el.addEventListener('change', refreshToggleHref);
+  });
+
+  // İlk yüklemede
+  loadPrefsIfUrlEmpty();
+  refreshToggleHref();
+})();
+</script>
+
 
 </body>
 </html>
