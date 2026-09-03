@@ -1,5 +1,5 @@
-name: planlama_uygulamasi
-description: A planning and reminder application
+name: notifyme
+description: "NotifyMe - adaptive planning and reminder app (V0 prototype)."
 publish_to: 'none'
 version: 1.0.0+1
 
