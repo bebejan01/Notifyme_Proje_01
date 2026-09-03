@@ -1,0 +1,15 @@
+# Root .gitignore for Notifyme_Proje_01 (Flutter app lives in notifyme/)
+
+# Environment / secrets
+.env
+*.env
+!*.env.example
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Build / tooling output (also covered by notifyme/.gitignore)
+build/
+.dart_tool/
