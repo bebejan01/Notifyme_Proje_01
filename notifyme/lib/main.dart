@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'data/app_database.dart';
 import 'screens/auth_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppDatabase.instance.database;
   runApp(const MyApp());
 }
 
