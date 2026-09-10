@@ -37,7 +37,14 @@ class AppDatabase {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
-  Future<void> _onCreate(Database db, int version) async {
+  Future<void> _onCreate(Database db, int version) => createSchema(db);
+
+  /// Creates the v1 schema (user_profile, goals, tasks) on [db].
+  ///
+  /// Exposed as a static method (not just onCreate) so tests can build the
+  /// same schema on an in-memory sqflite_common_ffi database without going
+  /// through the singleton's file-based `_open()` path.
+  static Future<void> createSchema(Database db) async {
     // All timestamps are stored as ISO 8601 TEXT (DateTime.toIso8601String()),
     // matching the convention already used by Task.toJson/fromJson.
 
