@@ -73,6 +73,148 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadTasks(), _loadActiveGoals()]);
+  }
+
+  void _showCreateGoalDialog() {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+    final categoryController = TextEditingController();
+    DateTime? selectedDeadline;
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Yeni Hedef Ekle'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Hedef Basligi',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Aciklama (opsiyonel)',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: categoryController,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori (opsiyonel)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      title: const Text('Bitis Tarihi (opsiyonel)'),
+                      subtitle: Text(
+                        selectedDeadline != null
+                            ? DateFormat('dd/MM/yyyy').format(selectedDeadline!)
+                            : 'Secilmedi',
+                      ),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDeadline ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedDeadline = picked;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  child: const Text('Iptal'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final title = titleController.text.trim();
+                          if (title.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Lutfen hedef basligi girin')),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isSubmitting = true;
+                          });
+
+                          final description =
+                              descriptionController.text.trim();
+                          final category = categoryController.text.trim();
+
+                          try {
+                            await goalService.createGoal(
+                              title: title,
+                              description:
+                                  description.isEmpty ? null : description,
+                              category: category.isEmpty ? null : category,
+                              deadline: selectedDeadline,
+                            );
+
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Hedef eklendi')),
+                            );
+                            _loadActiveGoals();
+                          } catch (error) {
+                            if (!context.mounted) return;
+                            setDialogState(() {
+                              isSubmitting = false;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Hata: ${error.toString()}')),
+                            );
+                          }
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Ekle'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAddTaskDialog() {
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
@@ -265,12 +407,25 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Aktif Hedefler',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Aktif Hedefler',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: _showCreateGoalDialog,
+                icon: const Icon(Icons.add_circle_outline),
+                tooltip: 'Hedef ekle',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           if (_isLoadingGoals)
@@ -388,7 +543,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: _loadTasks,
+                        onRefresh: _refreshAll,
                         child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _tasks.length,
