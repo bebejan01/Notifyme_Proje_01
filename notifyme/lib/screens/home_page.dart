@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../data/models/goal.dart';
 import '../models/task.dart';
+import '../services/goal_service.dart';
 import '../services/task_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,10 +17,15 @@ class _HomePageState extends State<HomePage> {
   List<Task> _tasks = [];
   bool _isLoading = true;
 
+  List<Goal> _activeGoals = [];
+  bool _isLoadingGoals = true;
+  String? _goalsError;
+
   @override
   void initState() {
     super.initState();
     _loadTasks();
+    _loadActiveGoals();
   }
 
   Future<void> _loadTasks() async {
@@ -41,6 +48,28 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gorevler yuklenemedi: ${error.toString()}')),
       );
+    }
+  }
+
+  Future<void> _loadActiveGoals() async {
+    setState(() {
+      _isLoadingGoals = true;
+      _goalsError = null;
+    });
+
+    try {
+      final goals = await goalService.getActiveGoals();
+      if (!mounted) return;
+      setState(() {
+        _activeGoals = goals;
+        _isLoadingGoals = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingGoals = false;
+        _goalsError = error.toString();
+      });
     }
   }
 
@@ -230,6 +259,100 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Widget _buildActiveGoalsSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Aktif Hedefler',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (_isLoadingGoals)
+            const SizedBox(
+              height: 96,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_goalsError != null)
+            const Text(
+              'Hedefler yuklenemedi',
+              style: TextStyle(color: Colors.red),
+            )
+          else if (_activeGoals.isEmpty)
+            const Text(
+              'Henüz aktif bir hedefin yok.',
+              style: TextStyle(color: Colors.grey),
+            )
+          else
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _activeGoals.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) =>
+                    _buildGoalCard(_activeGoals[index]),
+              ),
+            ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalCard(Goal goal) {
+    final hasCategory = goal.category != null && goal.category!.trim().isNotEmpty;
+
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            goal.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          if (hasCategory) ...[
+            const SizedBox(height: 4),
+            Text(
+              goal.category!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ],
+          if (goal.deadline != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              DateFormat('dd/MM/yyyy').format(goal.deadline!),
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -237,30 +360,36 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Ana Sayfa'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _tasks.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.task_outlined, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'Henuz gorev yok',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Yeni gorev eklemek icin + butonuna basin',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadTasks,
-                  child: ListView.builder(
+      body: Column(
+        children: [
+          _buildActiveGoalsSection(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _tasks.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.task_outlined,
+                                size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(
+                              'Henuz gorev yok',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.grey),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Yeni gorev eklemek icin + butonuna basin',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadTasks,
+                        child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _tasks.length,
                     itemBuilder: (context, index) {
@@ -338,6 +467,9 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTaskDialog,
         child: const Icon(Icons.add),
